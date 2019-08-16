@@ -29,6 +29,7 @@ import com.facebook.react.modules.core.PermissionListener;
 
 import org.json.JSONException;
 
+import 	java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -37,7 +38,7 @@ import javax.annotation.Nullable;
 
 public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule implements PermissionListener{
   final private static String TAG = "RNAudioRecorderPlayer";
-  final private static String FILE_LOCATION = "/sdcard/sound.mp4";
+  final private static String FILE_LOCATION = "/sdcard/" + System.currentTimeMillis() + ".mp4";
 
   private int subsDurationMillis = 100;
 
@@ -64,15 +65,15 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   public void startRecorder(final String path, Promise promise) {
     try {
       if (
-          Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-              (
-                  ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED &&
-                  ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-              )
-          ) {
+              Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                      (
+                              ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED &&
+                                      ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                      )
+      ) {
         ActivityCompat.requestPermissions(getCurrentActivity(), new String[]{
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
         }, 0);
         promise.reject("No permission granted.", "Try again after adding permission.");
         return;
@@ -133,13 +134,23 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
     mediaRecorder.release();
     mediaRecorder = null;
 
-    promise.resolve("recorder stopped.");
+    File audioFile = new File(FILE_LOCATION);
+    String audioFileSize = String.valueOf(audioFile.length());
+
+    WritableMap stopRecordingResultObject = Arguments.createMap();
+    stopRecordingResultObject.putString("size", audioFileSize);
+    stopRecordingResultObject.putString("path", "file://" + FILE_LOCATION);
+    stopRecordingResultObject.putString("type", "audio/mpeg");
+
+    promise.resolve(stopRecordingResultObject);
   }
 
   @ReactMethod
   public void setVolume(double volume, Promise promise) {
     if (mediaPlayer == null) {
-      promise.reject("setVolume", "player is null.");
+      Log.e(TAG, "[setVolume] mediaPlayer == null");
+      promise.resolve("mediaPlayer == null");
+      //promise.reject("setVolume", "player is null.");
       return;
     }
     float mVolume = (float) volume;
@@ -233,7 +244,9 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   @ReactMethod
   public void resumePlayer(Promise promise) {
     if (mediaPlayer == null) {
-      promise.reject("resume","mediaPlayer is null.");
+      Log.e(TAG, "[resumePlayer] mediaPlayer == null");
+      promise.resolve("mediaPlayer == null");
+      //promise.reject("setVolume", "player is null.");
       return;
     }
 
@@ -256,7 +269,9 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   @ReactMethod
   public void pausePlayer(Promise promise) {
     if (mediaPlayer == null) {
-      promise.reject("pausePlay","mediaPlayer is null.");
+      Log.e(TAG, "[pausePlayer] mediaPlayer == null");
+      promise.resolve("mediaPlayer == null");
+      //promise.reject("setVolume", "player is null.");
       return;
     }
 
@@ -272,7 +287,9 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   @ReactMethod
   public void seekToPlayer(int time, Promise promise) {
     if (mediaPlayer == null) {
-      promise.reject("seekTo","mediaPlayer is null.");
+      Log.e(TAG, "[seekToPlayer] mediaPlayer == null");
+      promise.resolve("mediaPlayer == null");
+      //promise.reject("setVolume", "player is null.");
       return;
     }
 
@@ -286,8 +303,8 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
                          String eventName,
                          @Nullable WritableMap params) {
     reactContext
-        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-        .emit(eventName, params);
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+            .emit(eventName, params);
   }
 
   @ReactMethod
@@ -297,7 +314,9 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
     }
 
     if (mediaPlayer == null) {
-      promise.reject("stopPlay","mediaPlayer is null.");
+      Log.e(TAG, "[stopPlayer] mediaPlayer == null");
+      promise.resolve("mediaPlayer == null");
+      //promise.reject("setVolume", "player is null.");
       return;
     }
 
