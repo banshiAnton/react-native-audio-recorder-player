@@ -155,32 +155,38 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   }
 
   @ReactMethod
-  public void startPlayer(final String path, final Promise promise) {
+  public void startPlayer(final String path, final int skeepTo, final Promise promise) {
     if (path == null || path.length() < 1) {
       promise.reject("[startPlayer]", "Path is required");
       return;
     }
     if (mediaPlayer != null) {
-      Boolean isPaused = !mediaPlayer.isPlaying() && mediaPlayer.getCurrentPosition() > 1;
-
-      if (isPaused) {
-        mediaPlayer.start();
-        promise.resolve("player resumed.");
-        return;
-      }
-
-      Log.e(TAG, "Player is already running. Stop it first.");
-      promise.reject("startPlay", "Player is already running. Stop it first.");
-      return;
+//      Boolean isPaused = !mediaPlayer.isPlaying() && mediaPlayer.getCurrentPosition() > 1;
+//
+//      if (isPaused) {
+//        mediaPlayer.start();
+//        promise.resolve("player resumed.");
+//        return;
+//      }
+//
+//      Log.e(TAG, "Player is already running. Stop it first.");
+//      promise.reject("startPlay", "Player is already running. Stop it first.");
+//      return;
+      mediaPlayer.stop();
+      mediaPlayer.release();
     } else {
       mediaPlayer = new MediaPlayer();
     }
     try {
+      Log.d(TAG, "mediaplayer path " + path);
       mediaPlayer.setDataSource(path);
       mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
         @Override
         public void onPrepared(final MediaPlayer mp) {
           Log.d(TAG, "mediaplayer prepared and start");
+          if (skeepTo > 0) {
+            mp.seekTo(skeepTo);
+          }
           mp.start();
 
           /**

@@ -119,8 +119,9 @@ class AudioRecorderPlayer {
    * @returns {Promise<string>}
    */
   resumePlayer = async() => {
-    if (!this._isPlaying) {
+    if (!this._isPlaying && this._isPaused) {
       this._isPlaying = true;
+      this._isPaused = false;
       return RNAudioRecorderPlayer.resumePlayer();
     }
     console.log('Already playing');
@@ -131,13 +132,15 @@ class AudioRecorderPlayer {
    * @param {string} uri audio uri.
    * @returns {Promise<string>}
    */
-  startPlayer = async(uri) => {
+  startPlayer = async(uri, seekTo = 0) => {
     if (!uri) {
       uri = 'DEFAULT';
     }
     if (!this._isPlaying) {
       this._isPlaying = true;
-      return RNAudioRecorderPlayer.startPlayer(uri);
+      this._isPaused = false;
+      console.log('Start play', seekTo, uri);
+      return RNAudioRecorderPlayer.startPlayer(uri, seekTo);
     }
     console.log('Already started playing');
   }
@@ -147,8 +150,9 @@ class AudioRecorderPlayer {
    * @returns {Promise<string>}
    */
   stopPlayer = async() => {
-    if (this._isPlaying) {
+    if (this._isPlaying || this._isPaused) {
       this._isPlaying = false;
+      this._isPaused = false;
       return RNAudioRecorderPlayer.stopPlayer();
     }
     console.log('Already stopped playing');
@@ -161,6 +165,7 @@ class AudioRecorderPlayer {
   pausePlayer = async() => {
     if (this._isPlaying) {
       this._isPlaying = false;
+      this._isPaused = true;
       return RNAudioRecorderPlayer.pausePlayer();
     }
     console.log('Already paused or stopped');
