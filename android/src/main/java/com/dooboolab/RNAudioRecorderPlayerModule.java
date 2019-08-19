@@ -1,13 +1,7 @@
 
 package com.dooboolab;
 
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.Callback;
-
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -15,21 +9,20 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
-import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.PermissionChecker;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.modules.core.PermissionListener;
 
-import org.json.JSONException;
-
-import 	java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -38,7 +31,8 @@ import javax.annotation.Nullable;
 
 public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule implements PermissionListener{
   final private static String TAG = "RNAudioRecorderPlayer";
-  final private static String FILE_LOCATION = "/sdcard/" + System.currentTimeMillis() + ".mp4";
+  static String FILE_LOCATION = null;
+  static double recordDuration = 0;
 
   private int subsDurationMillis = 100;
 
@@ -63,6 +57,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
 
   @ReactMethod
   public void startRecorder(final String path, Promise promise) {
+    FILE_LOCATION = path.equals("DEFAULT") ? ("/sdcard/" + System.currentTimeMillis() + ".mp4") : path;
     try {
       if (
               Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
@@ -89,11 +84,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
       mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
       mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
       mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-      if (path.equals("DEFAULT")) {
-        mediaRecorder.setOutputFile(FILE_LOCATION);
-      } else {
-        mediaRecorder.setOutputFile(path);
-      }
+      mediaRecorder.setOutputFile(FILE_LOCATION);
     }
 
     try {
@@ -105,6 +96,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
         public void run() {
           long time = SystemClock.elapsedRealtime() - systemTime;
           WritableMap obj = Arguments.createMap();
+          recordDuration = time;
           obj.putDouble("current_position", time);
           sendEvent(reactContext, "rn-recordback", obj);
           recordHandler.postDelayed(this, subsDurationMillis);
@@ -112,8 +104,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
       };
       this.recorderRunnable.run();
 
-      String resolvedPath = (path.equals("DEFAULT")) ? FILE_LOCATION : path;
-      promise.resolve("file://" + resolvedPath);
+      promise.resolve("file://" + FILE_LOCATION);
     } catch (Exception e) {
       Log.e(TAG, "Exception: ", e);
       promise.reject("startRecord", e.getMessage());
@@ -141,6 +132,10 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
     stopRecordingResultObject.putString("size", audioFileSize);
     stopRecordingResultObject.putString("path", "file://" + FILE_LOCATION);
     stopRecordingResultObject.putString("type", "audio/mpeg");
+    stopRecordingResultObject.putDouble("duration", recordDuration);
+
+    FILE_LOCATION = null;
+    recordDuration = 0;
 
     promise.resolve(stopRecordingResultObject);
   }
@@ -161,6 +156,10 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
 
   @ReactMethod
   public void startPlayer(final String path, final Promise promise) {
+    if (path == null || path.length() < 1) {
+      promise.reject("[startPlayer]", "Path is required");
+      return;
+    }
     if (mediaPlayer != null) {
       Boolean isPaused = !mediaPlayer.isPlaying() && mediaPlayer.getCurrentPosition() > 1;
 
@@ -177,11 +176,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
       mediaPlayer = new MediaPlayer();
     }
     try {
-      if (path.equals("DEFAULT")) {
-        mediaPlayer.setDataSource(FILE_LOCATION);
-      } else {
-        mediaPlayer.setDataSource(path);
-      }
+      mediaPlayer.setDataSource(path);
       mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
         @Override
         public void onPrepared(final MediaPlayer mp) {
@@ -204,8 +199,8 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
           mTimer = new Timer();
           mTimer.schedule(mTask, 0, subsDurationMillis);
 
-          String resolvedPath = (path.equals("DEFAULT")) ? "file://" + FILE_LOCATION : path;
-          promise.resolve(resolvedPath);
+          // String resolvedPath = (path.equals("DEFAULT")) ? "file://" + FILE_LOCATION : path;
+          promise.resolve(path);
         }
       });
       /**
