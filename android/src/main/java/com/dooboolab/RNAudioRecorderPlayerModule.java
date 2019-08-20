@@ -31,8 +31,8 @@ import javax.annotation.Nullable;
 
 public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule implements PermissionListener{
   final private static String TAG = "RNAudioRecorderPlayer";
-  static String FILE_LOCATION = null;
-  static double recordDuration = 0;
+  private String FILE_LOCATION = null;
+  private double recordDuration = 0;
 
   private int subsDurationMillis = 100;
 
@@ -79,13 +79,21 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
       return;
     }
 
-    if (mediaRecorder == null) {
-      mediaRecorder = new MediaRecorder();
-      mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-      mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-      mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-      mediaRecorder.setOutputFile(FILE_LOCATION);
+    if (mediaRecorder != null) {
+      try {
+        mediaRecorder.stop();
+        mediaRecorder.release();
+        mediaRecorder = null;
+      } catch (Exception e) {
+        Log.e(TAG, "mediaRecorder reset: " +  e.getMessage());
+      }
     }
+
+    mediaRecorder = new MediaRecorder();
+    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+    mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+    mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+    mediaRecorder.setOutputFile(FILE_LOCATION);
 
     try {
       mediaRecorder.prepare();
