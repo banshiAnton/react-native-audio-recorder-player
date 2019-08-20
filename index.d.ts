@@ -59,7 +59,7 @@ export default class AudioRecorderPlayer {
    * Stop recording.
    * @returns {Promise<string>}
    */
-  public stopRecorder() : Promise<string>;
+  public stopRecorder(cancel?: boolean = false) : Promise<string>;
 
   /**
    * Start playing.

@@ -120,7 +120,7 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
   }
 
   @ReactMethod
-  public void stopRecorder(Promise promise) {
+  public void stopRecorder(boolean cancel, Promise promise) {
     try {
       if (recordHandler != null) {
         recordHandler.removeCallbacks(this.recorderRunnable);
@@ -136,6 +136,17 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
 
       File audioFile = new File(FILE_LOCATION);
       String audioFileSize = String.valueOf(audioFile.length());
+
+      Log.d(TAG, "[stopRecorder] is cancel: " + cancel);
+
+      if (cancel || recordDuration < 1000) {
+        boolean audioFileDeletionresult = audioFile.delete();
+        Log.d(TAG, "[stopRecorder] deletion is success: " + audioFileDeletionresult);
+        FILE_LOCATION = null;
+        recordDuration = 0;
+        promise.resolve("[stopRecorder] file deleted by cancel or duration");
+        return;
+      }
 
       WritableMap stopRecordingResultObject = Arguments.createMap();
       stopRecordingResultObject.putString("size", audioFileSize);
@@ -359,5 +370,20 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
         break;
     }
     return false;
+  }
+
+  public void deleteFile(String path) {
+    try {
+      if (FILE_LOCATION != null || path != null) {
+        path = path != null ? path : FILE_LOCATION;
+        File audioFile = new File(path);
+        boolean deleteResult = audioFile.delete();
+        Log.d(TAG, "[deleteFile] result " + deleteResult);
+      } else {
+        Log.d(TAG, "[deleteFile] File to Delete is null");
+      }
+    } catch (Exception e) {
+      Log.e(TAG, "[deleteFile] failed: " +  e.getMessage());
+    }
   }
 }

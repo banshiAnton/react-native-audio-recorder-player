@@ -106,10 +106,10 @@ class AudioRecorderPlayer {
    * stop recording.
    * @returns {Promise<string>}
    */
-  stopRecorder = async() => {
+  stopRecorder = async(cancel = false) => {
     if (this._isRecording) {
       this._isRecording = false;
-      return RNAudioRecorderPlayer.stopRecorder();
+      return RNAudioRecorderPlayer.stopRecorder(cancel);
     }
     console.log('Already stopped recording');
   }
