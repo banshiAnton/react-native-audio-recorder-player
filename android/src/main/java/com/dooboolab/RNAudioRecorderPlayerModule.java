@@ -113,31 +113,35 @@ public class RNAudioRecorderPlayerModule extends ReactContextBaseJavaModule impl
 
   @ReactMethod
   public void stopRecorder(Promise promise) {
-    if (recordHandler != null) {
-      recordHandler.removeCallbacks(this.recorderRunnable);
+    try {
+      if (recordHandler != null) {
+        recordHandler.removeCallbacks(this.recorderRunnable);
+      }
+
+      if (mediaRecorder == null) {
+        promise.resolve("[java][native code] StopRecorder failed recorder is null");
+        return;
+      }
+      mediaRecorder.stop();
+      mediaRecorder.release();
+      mediaRecorder = null;
+
+      File audioFile = new File(FILE_LOCATION);
+      String audioFileSize = String.valueOf(audioFile.length());
+
+      WritableMap stopRecordingResultObject = Arguments.createMap();
+      stopRecordingResultObject.putString("size", audioFileSize);
+      stopRecordingResultObject.putString("path", "file://" + FILE_LOCATION);
+      stopRecordingResultObject.putString("type", "audio/mpeg");
+      stopRecordingResultObject.putDouble("duration", recordDuration);
+
+      FILE_LOCATION = null;
+      recordDuration = 0;
+
+      promise.resolve(stopRecordingResultObject);
+    } catch (Exception e) {
+      promise.resolve("[java][native code] StopRecorder failed " +  e.getMessage());
     }
-
-    if (mediaRecorder == null) {
-      promise.reject("stopRecord", "recorder is null.");
-      return;
-    }
-    mediaRecorder.stop();
-    mediaRecorder.release();
-    mediaRecorder = null;
-
-    File audioFile = new File(FILE_LOCATION);
-    String audioFileSize = String.valueOf(audioFile.length());
-
-    WritableMap stopRecordingResultObject = Arguments.createMap();
-    stopRecordingResultObject.putString("size", audioFileSize);
-    stopRecordingResultObject.putString("path", "file://" + FILE_LOCATION);
-    stopRecordingResultObject.putString("type", "audio/mpeg");
-    stopRecordingResultObject.putDouble("duration", recordDuration);
-
-    FILE_LOCATION = null;
-    recordDuration = 0;
-
-    promise.resolve(stopRecordingResultObject);
   }
 
   @ReactMethod
